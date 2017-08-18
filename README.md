@@ -9,9 +9,9 @@ go包的版本管理工具，基于 [http://gopkg.in](http://gopkg.in) 开发。
 ![Screenshot](https://raw.githubusercontent.com/bjdgyc/gopkgvc/master/gopkgvc.png)
 
 ## TODO
-* 该程序仅实现了http协议，如需要https功能，需结合nginx登陆代理工具实现。
-* 改程序版本控制是基于 项目的 `tag` 或者 `branch` 实现的
-* 程序版本应严格按照语义化版本写法 [http://semver.org/lang/zh-CN/](http://semver.org/lang/zh-CN/)
+* 该程序仅实现了 `http` 协议，如需要 `https` 功能，需结合 `nginx` 等代理工具实现。
+* 该程序版本控制是基于 项目的 `tag` 或者 `branch` 实现的
+* 程序版本应严格按照 `语义化版本` 写法 [http://semver.org/lang/zh-CN/](http://semver.org/lang/zh-CN/)
 
 ## Installation
 
@@ -38,4 +38,4 @@ go包的版本管理工具，基于 [http://gopkg.in](http://gopkg.in) 开发。
 
 
 ## Use
-浏览器打开 `http://mygopkg.com/user/project` 根据页面操作即可
+请使用浏览器打开 `http://mygopkg.com/user/project` 根据页面操作即可
