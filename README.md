@@ -38,4 +38,4 @@ go包的版本管理工具，基于 [http://gopkg.in](http://gopkg.in) 开发。
 
 
 ## Use
-请使用浏览器打开 `http://mygopkg.com/user/project` 根据页面操作即可
+请使用浏览器打开 `http://mygopkg.com/user/project.v1` 根据页面操作即可
