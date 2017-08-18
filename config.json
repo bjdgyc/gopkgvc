@@ -1,0 +1,7 @@
+{
+  "addr" : ":8080",
+  "gopkg_url":"http://mygopkg.com",
+  "vcs_url": "http://mygitlab.com",
+  "vcs_auth_user":"gitlab_user",
+  "vcs_auth_pass":"gitlab_pass"
+}
