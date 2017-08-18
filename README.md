@@ -5,6 +5,9 @@ gopkgvc
 go包的版本管理工具，基于 [http://gopkg.in](http://gopkg.in) 开发。
 主要用于企业内部包管理。现支持 （github、gitlab）等仓库的版本管理。
 
+# Screenshot
+![Screenshot](https://raw.githubusercontent.com/bjdgyc/gopkgvc/master/gopkgvc.png)
+
 ## TODO
 * 该程序仅实现了http协议，如需要https功能，需结合nginx登陆代理工具实现。
 * 改程序版本控制是基于 项目的 `tag` 或者 `branch` 实现的
