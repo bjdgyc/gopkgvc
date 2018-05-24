@@ -168,7 +168,7 @@ const packageTemplateString = `<!DOCTYPE html>
 			<div class="container">
 				<div class="row">
 					<div class="col-sm-12">
-						<p class="text-muted credit">Power By <a href="https://github.com/bjdgyc">bjdgyc<a>
+						<p class="text-muted credit">Power By <a href="https://github.com/bjdgyc/gopkgvc">gopkgvc<a>
 						| <a href="https://gopkg.in">gopkg.in<a></p>
 					</div>
 				</div>
