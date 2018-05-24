@@ -20,8 +20,7 @@ var gogetTemplate = template.Must(template.New("").Parse(`
 <meta charset="utf-8">
 <meta name="go-import" content="{{.GopkgRoot}} git {{.GopkgScheme}}://{{.GopkgRoot}}">
 {{$root := .VCSRoot}}{{$tree := .VCSTree}}
-<meta name="go-source" content="{{.GopkgRoot}} _ {{.GopkgScheme}}://{{$root}}/tree/{{$tree}}{/dir}
- {{.GopkgScheme}}://{{$root}}/blob/{{$tree}}{/dir}/{file}#L{line}">
+<meta name="go-source" content="{{.GopkgRoot}} _ {{$root}}/tree/{{$tree}}{/dir} {{$root}}/blob/{{$tree}}{/dir}/{file}#L{line}">
 </head>
 <body>
 go get {{.GopkgPath}}
@@ -29,48 +28,99 @@ go get {{.GopkgPath}}
 </html>
 `))
 
-//  /platform_base/cconfig_sdk.v2/base
-var patternNew = regexp.MustCompile(`^/([a-zA-Z0-9][-a-zA-Z0-9_]*)/([a-zA-Z0-9][-.a-zA-Z0-9_]*)\.((?:v0|v[1-9][0-9]*)(?:\.0|\.[1-9][0-9]*){0,2}(?:-unstable)?)(?:\.git)?((?:/[a-zA-Z0-9][-.a-zA-Z0-9_]*)*)$`)
+var gopkgTemplate = template.Must(template.New("").Parse(`
+<html>
+<head>
+<meta charset="utf-8">
+{{$root := .VCSRoot}}
+<meta name="go-import" content="{{.GopkgRoot}} git {{$root}}">
+</head>
+<body>
+go get {{.GopkgPath}}
+</body>
+</html>
+`))
+
+//TODO 访问地址
+// /group/project/sub
+// /v/group/project.v2/sub
+var patternVersion = regexp.MustCompile(`^/([-a-zA-Z0-9_]+)/([-a-zA-Z0-9_]+)\.(v0|v[1-9][0-9]*)((/[-.a-zA-Z0-9_]+)*)$`)
+var patternPkg = regexp.MustCompile(`^/([-a-zA-Z0-9_]+)/([-a-zA-Z0-9_]+)((/[-.a-zA-Z0-9_]+)*)$`)
 
 func handler(resp http.ResponseWriter, req *http.Request) {
-	if req.URL.Path == "/health-check" {
+	urlPath := req.URL.Path
+
+	//b, _ := httputil.DumpRequest(req, false)
+	//fmt.Println(string(b))
+
+	if urlPath == "/health-check" {
 		resp.Write([]byte("ok"))
 		return
 	}
 
-	log.Printf("%s requested %s", req.RemoteAddr, req.URL)
+	log.Printf("%s requested %s", req.Header.Get("X-Forwarded-For"), req.URL)
 
-	if req.URL.Path == "/" {
+	if urlPath == "/" {
 		resp.Header().Set("Location", config.VCSUrl)
 		resp.WriteHeader(http.StatusTemporaryRedirect)
 		return
 	}
 
-	m := patternNew.FindStringSubmatch(req.URL.Path)
+	log.Printf("req.URL.Path %s", urlPath)
 
-	//TODO 测试代码
-	//sendNotFound(resp, fmt.Sprintln(m))
-	//return
+	var (
+		isGopkg = false
+		ok      bool
+		m       []string
+	)
 
-	if m == nil {
-		sendErrMsg(resp, http.StatusNotFound, "Unsupported URL pattern; see the documentation at gopkg.in for details.")
-		return
+	//版本管理
+	if strings.HasPrefix(urlPath, "/v/") {
+		urlPath = urlPath[2:]
+		m = patternVersion.FindStringSubmatch(urlPath)
+	} else {
+		m = patternPkg.FindStringSubmatch(urlPath)
+		isGopkg = true
 	}
 
-	if strings.Contains(m[3], ".") {
-		sendErrMsg(resp, http.StatusOK, "Import paths take the major version only (.%s instead of .%s); see docs at gopkg.in for the reasoning.",
-			m[3][:strings.Index(m[3], ".")], m[3])
+	log.Println(m)
+
+	if m == nil {
+		sendErrMsg(resp, http.StatusNotFound, "Unsupported URL pattern; see the documentation at gopkg.in for details.\n")
 		return
 	}
 
 	repo := &Repo{
-		User:        m[1],
+		Group:       m[1],
 		Name:        m[2],
-		SubPath:     m[4],
+		SubPath:     m[3],
 		FullVersion: InvalidVersion,
 	}
 
-	var ok bool
+	//TODO gopkg
+	if isGopkg == true {
+		repo.Gopkg = true
+		resp.Header().Set("Content-Type", "text/html")
+		if req.FormValue("go-get") == "1" {
+			// execute simple template when this is a go-get request
+			err := gopkgTemplate.Execute(resp, repo)
+			if err != nil {
+				log.Printf("error executing go get template: %s\n", err)
+			}
+		}
+		return
+	}
+
+	//==========================以下为版本管理===============================
+
+	if strings.Contains(m[3], ".") {
+		sendErrMsg(resp, http.StatusOK, "Import paths take the major version only (.%s instead of .%s); see docs at gopkg.in for the reasoning.\n",
+			m[3][:strings.Index(m[3], ".")], m[3])
+		return
+	}
+
+	repo.SubPath = m[4]
+
 	repo.MajorVersion, ok = parseVersion(m[3])
 	if !ok {
 		sendErrMsg(resp, http.StatusNotFound, "Version %q improperly considered invalid; please warn the service maintainers.", m[3])
@@ -156,7 +206,7 @@ func handler(resp http.ResponseWriter, req *http.Request) {
 	resp.Header().Set("Content-Type", "text/html")
 	if req.FormValue("go-get") == "1" {
 		// execute simple template when this is a go-get request
-		err = gogetTemplate.Execute(resp, repo)
+		err := gogetTemplate.Execute(resp, repo)
 		if err != nil {
 			log.Printf("error executing go get template: %s\n", err)
 		}
@@ -168,7 +218,8 @@ func handler(resp http.ResponseWriter, req *http.Request) {
 
 // Repo represents a source code repository on GitHub.
 type Repo struct {
-	User         string
+	Gopkg        bool
+	Group        string
 	Name         string
 	SubPath      string
 	MajorVersion Version
@@ -196,7 +247,11 @@ func (repo *Repo) SetVersions(all []Version) {
 
 // VCSRoot returns the repository root at VCS, with a schema.
 func (repo *Repo) VCSRoot() string {
-	return config.VCSUrl + "/" + repo.User + "/" + repo.Name
+	if repo.Gopkg {
+		//gitlab需要ssh协议
+		return "ssh://git@" + config.VCSHost + "/" + repo.Group + "/" + repo.Name + ".git"
+	}
+	return config.VCSUrl + "/" + repo.Group + "/" + repo.Name
 
 }
 
@@ -225,12 +280,14 @@ func (repo *Repo) GopkgPath() string {
 // GopkgVersionRoot returns the package root in gopkg.in for the
 // provided version, without a schema.
 func (repo *Repo) GopkgVersionRoot(version Version) string {
+	if repo.Gopkg {
+		return config.GopkgHost + "/" + repo.Group + "/" + repo.Name
+	}
+
 	version.Minor = -1
 	version.Patch = -1
 	v := version.String()
-
-	return config.GopkgHost + "/" + repo.User + "/" + repo.Name + "." + v
-
+	return config.GopkgHost + "/v/" + repo.Group + "/" + repo.Name + "." + v
 }
 
 func sendErrMsg(resp http.ResponseWriter, httpCode int, msg string, args ...interface{}) {

@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"time"
+	"log"
 )
 
 var (
@@ -41,11 +42,13 @@ type Config struct {
 	GopkgHost string
 	//http协议
 	GopkgScheme string
+	VCSHost     string
 }
 
 var config = Config{}
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	flag.Parse()
 	data, err := ioutil.ReadFile(*configFile)
 	if err != nil {
@@ -63,6 +66,9 @@ func main() {
 
 	config.GopkgHost = parseUrl.Host
 	config.GopkgScheme = parseUrl.Scheme
+
+	pu, _ := url.Parse(config.VCSUrl)
+	config.VCSHost = pu.Host
 
 	if config.VCSAuthUser != "" && config.VCSAuthPass != "" {
 		config.vcsNeedAuth = true

@@ -3,7 +3,7 @@
 ## Introduction
 gopkgvc
 go包的版本管理工具，基于 [http://gopkg.in](http://gopkg.in) 开发。
-主要用于企业内部包管理。现支持 （github、gitlab）等仓库的版本管理。
+主要用于企业内部包管理。现支持 （gitlab）等仓库的版本管理。
 
 # Screenshot
 ![Screenshot](https://raw.githubusercontent.com/bjdgyc/gopkgvc/master/gopkgvc.png)
@@ -38,4 +38,7 @@ go包的版本管理工具，基于 [http://gopkg.in](http://gopkg.in) 开发。
 
 
 ## Use
-请使用浏览器打开 `http://mygopkg.com/user/project.v1` 根据页面操作即可
+
+命令行执行 `go get -insecure mygopkg.com/user/project` 下载对应的包
+
+请使用浏览器打开 `http://mygopkg.com/v/user/project.v1` 根据页面操作即可
